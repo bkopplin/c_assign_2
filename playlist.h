@@ -78,3 +78,5 @@ int loadPlaylist(Playlist **listPtr, char filename[]);
    Always use this function to request memory.
    Use it, but don't define it. */
 void* myMalloc(size_t size);
+
+int printList(Playlist *listPtr);

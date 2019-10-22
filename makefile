@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Werror -Wpedantic
+CFLAGS=-Wall -Werror -Wpedantic -g
 HEADERS=playlist.h
 
 all: playlist.o playlist_tester.o
