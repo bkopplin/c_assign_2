@@ -1,5 +1,7 @@
 /*
-TODO
+* author: Bjarne Kopplin
+* ID: 180016866
+* Module code: AC21008
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,8 +36,6 @@ int insertBeforeCurr(Playlist* listPtr, char trackName[], int trackLength) {
     return INVALID_INPUT_PARAMETER;
 if (trackLength <= 0)
     return INVALID_INPUT_PARAMETER;
-if (trackLength > 88000)
-     return INVALID_INPUT_PARAMETER;
 
 MP3Track *pTrack = (MP3Track*)myMalloc(sizeof(MP3Track));
 if (pTrack == NULL)
@@ -77,8 +77,7 @@ int insertAfterCurr(Playlist* listPtr, char trackName[], int trackLength) {
     return INVALID_INPUT_PARAMETER;
 if (trackLength <= 0)
     return INVALID_INPUT_PARAMETER;
-if (trackLength > 88000)
-     return INVALID_INPUT_PARAMETER;
+
 
 MP3Track *pTrack = (MP3Track*)myMalloc(sizeof(MP3Track));
 if (pTrack == NULL)
@@ -166,7 +165,7 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
      if (listPtr->curr == NULL)
           return INVALID_LIST_OPERATION;
      if (moveForward != 1 && moveForward != 0)
-          return INVALID_INPUT_PARAMETER; // TODO what does the tester expect?
+          return INVALID_INPUT_PARAMETER; 
 
      // copy curr to pTrack
       pTrack->trackLength = listPtr->curr->trackLength;
@@ -181,14 +180,14 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
           listPtr->curr = NULL;
           listPtr->head = NULL;
           listPtr->tail = NULL;
+          free(to_remove);
+          to_remove = NULL;
           return SUCCESS;
      }
-     printf("\n%s\n%s\n", listPtr->head->trackName, listPtr->tail->trackName);
 
      // remove node
      // point to next track after removal
      if (moveForward == 1) {
-
 
           // if current is same as head
           if (listPtr->curr == listPtr->head) {
@@ -197,16 +196,18 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
                listPtr->head->prev = NULL;
                listPtr->curr = listPtr->head;
                free(to_remove);
-
+               to_remove = NULL;
                return SUCCESS;
           }
            // if curr is same as tail
           else if (listPtr->curr == listPtr->tail) {
-               // TODO ask wheather error code or move backwards (cause it's the last element, and it can't move forwards)
-               // move backwards for now
+               
+               // move backwards to delete
+               to_remove = listPtr->curr;
                listPtr->tail = listPtr->curr->prev;
                listPtr->tail->next = NULL;
-               free(listPtr->curr);
+               free(to_remove);
+               to_remove = NULL;
                listPtr->curr = listPtr->tail;
                return SUCCESS;
           }
@@ -216,6 +217,7 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
                listPtr->curr->next->prev = listPtr->curr->prev;
                listPtr->curr = listPtr->curr->next;
                free(to_remove);
+               to_remove = NULL;
                return SUCCESS;
           }
      }
@@ -223,23 +225,23 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
      else {
           // if current is same as head
           if (listPtr->curr == listPtr->head) {
-               // TODO ask wheather error code or move backwards (cause it's the last element, and it can't move forwards)
-               // move forwards for now
+               // move forwards for delete
 
                listPtr->head = listPtr->curr->next;
                listPtr->head->prev = NULL;
                listPtr->curr = listPtr->head;
                free(to_remove);
-
+               to_remove = NULL;
                return SUCCESS;
           }
            // if curr is same as tail
           else if (listPtr->curr == listPtr->tail) {
-               // TODO ask wheather error code or move backwards (cause it's the last element, and it can't move forwards)
-               // move backwards for now
+
+               to_remove = listPtr->curr;
                listPtr->tail = listPtr->curr->prev;
                listPtr->tail->next = NULL;
-               free(listPtr->curr);
+               free(to_remove);
+               to_remove = NULL;
                listPtr->curr = listPtr->tail;
                return SUCCESS;
           }
@@ -247,8 +249,9 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
           else {
                listPtr->curr->prev->next = listPtr->curr->next;
                listPtr->curr->next->prev = listPtr->curr->prev;
-               listPtr->curr = listPtr->curr->prev; // TODO only line that differs from moveForward = 1
+               listPtr->curr = listPtr->curr->prev; // could be optimised as only this line that differs from moveForward = 1
                free(to_remove);
+               to_remove = NULL;
                return SUCCESS;
           }
      }
@@ -279,13 +282,35 @@ int clearPlaylist(Playlist* listPtr) {
     }
 
     free(listPtr);
-    listPtr = NULL; // TODO can't do it inside the function cause I need a double pointer. Can I assue that after cleaning the queue the pointer is set to NULL?
+    listPtr = NULL; // doesn't work inside the function cause I need a double pointer. Can I assue that after cleaning the queue the pointer is set to NULL?
     return SUCCESS;
 }
 
 /* save details of all of the tracks in the playlist into the given file */
 int savePlaylist(Playlist *listPtr, char filename[]) {
-     return NOT_IMPLEMENTED;
+     if (listPtr == NULL)
+          return INVALID_INPUT_PARAMETER;
+
+     FILE *fp;
+     fp = fopen(filename, "w");
+     if (fp == NULL) 
+          return FILE_IO_ERROR;
+     MP3Track *temp = (MP3Track*)myMalloc(sizeof(MP3Track));
+     if (temp == NULL)
+          return MEMORY_ALLOCATION_ERROR;
+     
+     temp = listPtr->head;
+     printList(listPtr);
+     int write_result = 0;
+     while (temp != NULL) {
+          write_result = fprintf(fp, "%s#%d#\n", temp->trackName, temp->trackLength);
+          if (write_result == EOF)
+               return FILE_IO_ERROR;
+          temp = temp->next;
+     }
+     fclose(fp);
+
+     return SUCCESS;
 }
 
 /* This function is similar to 'createPlaylist'. It should create a new, empty playlist BUT
@@ -295,7 +320,36 @@ int savePlaylist(Playlist *listPtr, char filename[]) {
 } insert these as new MP3 tracks into your playlist, and store a pointer to
    the newly created playlist into the variable provided (e.g. listPtr)  */
 int loadPlaylist(Playlist **listPtr, char filename[]) {
-     return NOT_IMPLEMENTED;
+     if (*listPtr != NULL)
+          return INVALID_INPUT_PARAMETER;
+
+     FILE *fp;
+     fp = fopen(filename, "r");
+     if (fp == NULL) 
+          return FILE_IO_ERROR;
+
+     createPlaylist(listPtr);
+
+     MP3Track *temp = (MP3Track*)myMalloc(sizeof(MP3Track));
+     if (temp == NULL) 
+          return MEMORY_ALLOCATION_ERROR;
+
+     char trackName[50];
+     int trackLength;
+
+     char line[256];
+     while (fgets(line, 256, fp)) {
+          
+          if (strlen(line) > 2 && strstr(line,"#") && !strstr(line, "##")) {
+               
+                  
+          strcpy(trackName, strtok(line, "#"));
+          trackLength = atoi(strtok(NULL, "#"));
+          insertAfterCurr(*listPtr, trackName, trackLength);
+          skipNext(*listPtr);
+          }
+     }
+     return SUCCESS;
 }
 
 int printList(Playlist *listPtr) {
@@ -309,13 +363,11 @@ int printList(Playlist *listPtr) {
      char isHead;
      char isTail;
 
-     while (temp!= NULL) {
+     while (temp != NULL) {
           if (temp == listPtr->head) { isHead = '*';}
           else {isHead = '\0';}
           if (temp == listPtr->tail) { isTail = '$';}
           else { isTail = '\0';}
-
-          // ((temp == listPtr->head) ? isHead = '*' : isHead = '\O');
 
           if (temp == listPtr->curr) {
           printf("%c( %s, %d )%c ", isHead, temp->trackName, temp->trackLength, isTail);

@@ -98,11 +98,6 @@ int test_add_after_iterator() {
 	// printList(p);
 	checkTest(result, INVALID_INPUT_PARAMETER, testname);
 
-	strcpy(testname, "track length check (should be <= 88000");
-	result = insertAfterCurr(p, "Hey Brother", 88001);
-	// printList(p);
-	checkTest(result, INVALID_INPUT_PARAMETER, testname);
-
 	strcpy(testname, "track length check (should be > 0)");
 	result = insertAfterCurr(p, "Hey Brother", 0);
 	// printList(p);
@@ -381,6 +376,62 @@ int test_clear_list() {
 	return 0;
 }
 
+int test_save_to_file() {
+	char testname [255];
+	Playlist *p = NULL;
+	int result = 0;
+
+	printf("\n---TEST SAVE TO FILE---\n");
+
+	strcpy(testname, "Try to save a not initialized playlist");
+	result = savePlaylist(p, "test_save1.txt");
+	checkTest(result, INVALID_INPUT_PARAMETER, testname);
+
+	createPlaylist(&p);
+
+	strcpy(testname, "try to save a file with an empty filename");
+	result = savePlaylist(p, "");
+	checkTest(result, FILE_IO_ERROR, testname);
+
+	strcpy(testname, "save an empty playlist");
+	result = savePlaylist(p, "test_save_empty_playlist.txt");
+	checkTest(result, SUCCESS, testname); // TODO what to return when empty
+
+	// add tracks
+	insertAfterCurr(p, "Hey Brother", 123);
+	insertAfterCurr(p, "Addicted to you", 456);
+	insertAfterCurr(p, "Touch me", 32432);
+
+
+	strcpy(testname, "save a playlist");
+	result = savePlaylist(p, "test_save_playlist.txt");
+	checkTest(result, SUCCESS, testname);
+
+	return 0;
+}
+
+int test_load_playlist() {
+	char testname [255];
+	Playlist *p = NULL;
+	int result = 0;
+
+	printf("\n---TEST LOAD FROM FILE---\n");
+
+	strcpy(testname, "Try to load from a non-existing file");
+	result = loadPlaylist(&p, "NNNNNNNNNNNN");
+	checkTest(result, FILE_IO_ERROR, testname);
+
+	strcpy(testname, "Try to load from a file with empty filename");
+	result = loadPlaylist(&p, "");
+	checkTest(result, FILE_IO_ERROR, testname);
+
+	strcpy(testname, "Read in playlist");
+	result = loadPlaylist(&p, "test_playlist.txt");
+	checkTest(result, SUCCESS, testname);
+	printList(p);
+
+	return 0;
+}
 
 int main() {
 	test_init();
@@ -391,5 +442,7 @@ int main() {
 	test_get_curr();
 	test_remove();
 	test_clear_list();
+	test_save_to_file();
+	test_load_playlist();
 	return 0;
 }
