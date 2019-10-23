@@ -28,19 +28,13 @@ int createPlaylist(Playlist **listPtr) {
 /* Add a new MP3 track into the playlist immediately
    BEFORE the current position in the list */
 int insertBeforeCurr(Playlist* listPtr, char trackName[], int trackLength) {
-     return NOT_IMPLEMENTED;
-}
-
-/* Add a new MP3 track into the playlist immediately
-   AFTER the current position in the list */
-int insertAfterCurr(Playlist* listPtr, char trackName[], int trackLength) {
   if (listPtr == NULL )
     return INVALID_INPUT_PARAMETER;
   if ( strlen(trackName) > 49 || strlen(trackName) < 1)
     return INVALID_INPUT_PARAMETER;
 if (trackLength <= 0)
     return INVALID_INPUT_PARAMETER;
-if (trackLength > 88000) 
+if (trackLength > 88000)
      return INVALID_INPUT_PARAMETER;
 
 MP3Track *pTrack = (MP3Track*)myMalloc(sizeof(MP3Track));
@@ -57,7 +51,50 @@ if (listPtr->curr == NULL){
   listPtr->head = pTrack;
   listPtr->tail = pTrack;
   listPtr->curr = pTrack;
-} 
+}
+// if curr is at head
+else if (listPtr->curr == listPtr->head) {
+  listPtr->curr->prev = pTrack;
+  pTrack->next = listPtr->curr;
+  listPtr->head = pTrack;
+}
+// if current is in the middle or tail
+else {
+     pTrack->prev = listPtr->curr->prev;
+     pTrack->next = listPtr->curr;
+     listPtr->curr->prev->next = pTrack;
+     listPtr->curr->prev = pTrack;
+}
+     return SUCCESS;
+}
+
+/* Add a new MP3 track into the playlist immediately
+   AFTER the current position in the list */
+int insertAfterCurr(Playlist* listPtr, char trackName[], int trackLength) {
+  if (listPtr == NULL )
+    return INVALID_INPUT_PARAMETER;
+  if ( strlen(trackName) > 49 || strlen(trackName) < 1)
+    return INVALID_INPUT_PARAMETER;
+if (trackLength <= 0)
+    return INVALID_INPUT_PARAMETER;
+if (trackLength > 88000)
+     return INVALID_INPUT_PARAMETER;
+
+MP3Track *pTrack = (MP3Track*)myMalloc(sizeof(MP3Track));
+if (pTrack == NULL)
+      return MEMORY_ALLOCATION_ERROR;
+
+strcpy(pTrack->trackName, trackName);
+pTrack->trackLength = trackLength;
+pTrack->prev = NULL;
+pTrack->next = NULL;
+
+// case list is empty
+if (listPtr->curr == NULL){
+  listPtr->head = pTrack;
+  listPtr->tail = pTrack;
+  listPtr->curr = pTrack;
+}
 // if curr is at tail
 else if (listPtr->curr == listPtr->tail){
 pTrack->prev = listPtr->curr;
@@ -78,12 +115,12 @@ else {
 /* Skip to the next track in the playlist, i.e. shift 'curr' one
    position forward in the list */
 int skipNext(Playlist* listPtr) {
-     if (listPtr == NULL) 
+     if (listPtr == NULL)
           return INVALID_INPUT_PARAMETER;
 
-     if (listPtr->curr == NULL || listPtr->curr->next == NULL) {
+     if (listPtr->curr == NULL || listPtr->curr->next == NULL)
           return INVALID_LIST_OPERATION;
-     }
+
      listPtr->curr = listPtr->curr->next;
      return SUCCESS;
 }
@@ -91,14 +128,22 @@ int skipNext(Playlist* listPtr) {
 /* Skip to the previous track in the playlist, i.e. shift 'curr' one
    position back in the list */
 int skipPrev(Playlist* listPtr) {
+  if (listPtr == NULL)
+       return INVALID_INPUT_PARAMETER;
+
+  if (listPtr->curr == NULL || listPtr->curr->prev == NULL)
+        return INVALID_LIST_OPERATION;
+
+  listPtr->curr = listPtr->curr->prev;
+      return SUCCESS;
      return NOT_IMPLEMENTED;
 }
 
 /* Get the data for the current track in the playlist */
 int getCurrentTrack(Playlist* listPtr, MP3Track *pTrack) {
-     if (listPtr == NULL) 
+     if (listPtr == NULL)
           return INVALID_INPUT_PARAMETER;
-     if (listPtr->curr == NULL) 
+     if (listPtr->curr == NULL)
           return INVALID_LIST_OPERATION;
 
      pTrack->trackLength = listPtr->curr->trackLength;
@@ -132,7 +177,7 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
 
      // if there is only one element left in the queue
      if (listPtr->head == listPtr->tail) {
-          
+
           listPtr->curr = NULL;
           listPtr->head = NULL;
           listPtr->tail = NULL;
@@ -143,18 +188,18 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
      // remove node
      // point to next track after removal
      if (moveForward == 1) {
-         
-          
+
+
           // if current is same as head
           if (listPtr->curr == listPtr->head) {
-               
+
                listPtr->head = listPtr->curr->next;
                listPtr->head->prev = NULL;
                listPtr->curr = listPtr->head;
                free(to_remove);
 
                return SUCCESS;
-          } 
+          }
            // if curr is same as tail
           else if (listPtr->curr == listPtr->tail) {
                // TODO ask wheather error code or move backwards (cause it's the last element, and it can't move forwards)
@@ -164,7 +209,7 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
                free(listPtr->curr);
                listPtr->curr = listPtr->tail;
                return SUCCESS;
-          } 
+          }
           // is curr is in the middle of the list
           else {
                listPtr->curr->prev->next = listPtr->curr->next;
@@ -173,21 +218,21 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
                free(to_remove);
                return SUCCESS;
           }
-     } 
+     }
      // point to prev track after removal
      else {
           // if current is same as head
           if (listPtr->curr == listPtr->head) {
                // TODO ask wheather error code or move backwards (cause it's the last element, and it can't move forwards)
                // move forwards for now
-               
+
                listPtr->head = listPtr->curr->next;
                listPtr->head->prev = NULL;
                listPtr->curr = listPtr->head;
                free(to_remove);
 
                return SUCCESS;
-          } 
+          }
            // if curr is same as tail
           else if (listPtr->curr == listPtr->tail) {
                // TODO ask wheather error code or move backwards (cause it's the last element, and it can't move forwards)
@@ -197,7 +242,7 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
                free(listPtr->curr);
                listPtr->curr = listPtr->tail;
                return SUCCESS;
-          } 
+          }
           // is curr is in the middle of the list
           else {
                listPtr->curr->prev->next = listPtr->curr->next;
@@ -211,7 +256,31 @@ int removeAtCurr(Playlist* listPtr, MP3Track *pTrack, int moveForward) {
 
 /* Empty the entire contents of the playlist, freeing up any memory that it currently uses */
 int clearPlaylist(Playlist* listPtr) {
-     return NOT_IMPLEMENTED;
+  if (listPtr == NULL)
+       return INVALID_INPUT_PARAMETER;
+
+  MP3Track *temp = (MP3Track*)myMalloc(sizeof(MP3Track));
+  if (temp == NULL)
+    return MEMORY_ALLOCATION_ERROR;
+
+  temp = listPtr->head;
+
+  while (temp != NULL) {
+    MP3Track *to_clear = temp;
+    temp = temp->next;
+
+    to_clear->trackLength = 0;
+    strcpy(to_clear->trackName, "");
+    to_clear->next = NULL;
+    to_clear->prev = NULL;
+
+    free(to_clear);
+    to_clear = NULL;
+    }
+
+    free(listPtr);
+    listPtr = NULL; // TODO can't do it inside the function cause I need a double pointer. Can I assue that after cleaning the queue the pointer is set to NULL?
+    return SUCCESS;
 }
 
 /* save details of all of the tracks in the playlist into the given file */
@@ -230,9 +299,9 @@ int loadPlaylist(Playlist **listPtr, char filename[]) {
 }
 
 int printList(Playlist *listPtr) {
-     if (listPtr == NULL) 
+     if (listPtr == NULL)
           return INVALID_INPUT_PARAMETER;
-     if (listPtr->head == NULL) 
+     if (listPtr->head == NULL)
           return INVALID_LIST_OPERATION;
 
      MP3Track *temp = (MP3Track*)myMalloc(sizeof(MP3Track));
